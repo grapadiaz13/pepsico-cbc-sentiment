@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CBC x PepsiCo — Sentiment Analysis</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f8f6; color: #1a1a1a; padding: 24px; }
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .metric { background: #f1efe8; border-radius: 8px; padding: 14px 16px; }
+  .metric-label { font-size: 12px; color: #5f5e5a; margin-bottom: 4px; }
+  .metric-value { font-size: 22px; font-weight: 500; color: #1a1a1a; }
+  .metric-value.pos { color: #1D9E75; }
+  .metric-value.neg { color: #E24B4A; }
+  .metric-value.neu { color: #888780; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .card { background: #fff; border: 0.5px solid rgba(0,0,0,0.12); border-radius: 12px; padding: 16px 20px; }
+  .section-title { font-size: 11px; font-weight: 500; color: #888780; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+  .topic-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .topic-label { font-size: 12px; color: #1a1a1a; min-width: 155px; }
+  .bar-wrap { flex: 1; background: #f1efe8; border-radius: 4px; height: 7px; overflow: hidden; }
+  .bar { height: 7px; border-radius: 4px; }
+  .topic-count { font-size: 11px; color: #888780; min-width: 20px; text-align: right; }
+  .comment-item { border-bottom: 0.5px solid rgba(0,0,0,0.08); padding: 10px 0; }
+  .comment-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .comment-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+  .badge.pos { background: #E1F5EE; color: #0F6E56; }
+  .badge.neg { background: #FCEBEB; color: #A32D2D; }
+  .badge.neu { background: #F1EFE8; color: #5F5E5A; }
+  .comment-user { font-size: 12px; color: #888780; }
+  .comment-likes { font-size: 11px; color: #b4b2a9; margin-left: auto; }
+  .comment-text { font-size: 13px; color: #1a1a1a; line-height: 1.5; }
+  .goodwill-box { background: #E1F5EE; border: 0.5px solid #5DCAA5; border-radius: 12px; padding: 14px 18px; margin-bottom: 12px; }
+  .goodwill-title { font-size: 11px; font-weight: 500; color: #085041; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .goodwill-item { font-size: 13px; color: #0F6E56; margin-bottom: 6px; display: flex; gap: 8px; line-height: 1.4; }
+  .goodwill-item:last-child { margin-bottom: 0; }
+  .insight-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
+  .insight-dot { width: 6px; height: 6px; border-radius: 50%; background: #7F77DD; margin-top: 5px; flex-shrink: 0; }
+  .insight-text { font-size: 13px; color: #1a1a1a; line-height: 1.5; }
+  .chart-legend { display: flex; gap: 16px; margin-bottom: 8px; font-size: 12px; color: #5f5e5a; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="metrics">
+  <div class="metric">
+    <div class="metric-label">Total comentarios</div>
+    <div class="metric-value">31</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">Sentimiento positivo</div>
+    <div class="metric-value pos">68%</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">Neutro</div>
+    <div class="metric-value neu">19%</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">Negativo</div>
+    <div class="metric-value neg">13%</div>
+  </div>
+</div>
+
+<div class="goodwill-box">
+  <div class="goodwill-title">Goodwill detectado — señales clave</div>
+  <div class="goodwill-item"><span>+</span> Pepsi Guate comentó directamente celebrando el logro (182 likes — el comentario más likeado)</div>
+  <div class="goodwill-item"><span>+</span> Usuarios elogiaron la dinámica del reciclaje como "increíble" y destacaron el orden del evento</div>
+  <div class="goodwill-item"><span>+</span> Mencionan que el lugar quedó limpio — refuerza el propósito de sostenibilidad</div>
+  <div class="goodwill-item"><span>+</span> Una usuaria dijo explícitamente "eso es ser influencer" en referencia al reciclaje</div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <div class="section-title">Topics principales</div>
+    <div class="topic-row"><span class="topic-label">Dinámica de reciclaje</span><div class="bar-wrap"><div class="bar" style="width:80%;background:#7F77DD"></div></div><span class="topic-count">8</span></div>
+    <div class="topic-row"><span class="topic-label">Elogio al evento</span><div class="bar-wrap"><div class="bar" style="width:65%;background:#1D9E75"></div></div><span class="topic-count">7</span></div>
+    <div class="topic-row"><span class="topic-label">Saludos al creador</span><div class="bar-wrap"><div class="bar" style="width:50%;background:#888780"></div></div><span class="topic-count">5</span></div>
+    <div class="topic-row"><span class="topic-label">Mención de marca Pepsi</span><div class="bar-wrap"><div class="bar" style="width:40%;background:#378ADD"></div></div><span class="topic-count">4</span></div>
+    <div class="topic-row"><span class="topic-label">Crítica / comparación</span><div class="bar-wrap"><div class="bar" style="width:20%;background:#E24B4A"></div></div><span class="topic-count">2</span></div>
+    <div class="topic-row"><span class="topic-label">Preguntas / dudas</span><div class="bar-wrap"><div class="bar" style="width:15%;background:#888780"></div></div><span class="topic-count">2</span></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Distribución de sentimiento general</div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div> Positivo 68%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#888780"></div> Neutro 19%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#E24B4A"></div> Negativo 13%</div>
+    </div>
+    <div style="position:relative;width:100%;height:180px;">
+      <canvas id="pieChart" role="img" aria-label="Gráfica de pastel: 68% positivo, 19% neutro, 13% negativo">68% positivo, 19% neutro, 13% negativo.</canvas>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:12px;">
+  <div class="section-title">Comentarios destacados</div>
+  <div class="comment-item">
+    <div class="comment-meta">
+      <span class="badge pos">positivo</span>
+      <span class="comment-user">@pepsiguate</span>
+      <span class="comment-likes">182 likes</span>
+    </div>
+    <div class="comment-text">"Lo logramooooos — ¡DESBLOQUEAMOS EL AFTER! No superamos ese día."</div>
+  </div>
+  <div class="comment-item">
+    <div class="comment-meta">
+      <span class="badge pos">positivo</span>
+      <span class="comment-user">@levyparedes</span>
+      <span class="comment-likes">50 likes</span>
+    </div>
+    <div class="comment-text">"La dinámica del reciclaje fue increíble, hace más fácil el ambiente para los organizadores que tienen una jornada súper larga."</div>
+  </div>
+  <div class="comment-item">
+    <div class="comment-meta">
+      <span class="badge pos">positivo</span>
+      <span class="comment-user">@robertomolinacast</span>
+      <span class="comment-likes">142 likes</span>
+    </div>
+    <div class="comment-text">"Excelente evento, muy ordenado, buena seguridad, cierto muy limpio el lugar."</div>
+  </div>
+  <div class="comment-item">
+    <div class="comment-meta">
+      <span class="badge pos">positivo</span>
+      <span class="comment-user">@leo_medina__</span>
+      <span class="comment-likes">10 likes</span>
+    </div>
+    <div class="comment-text">"Tremenda dinámica, joyita."</div>
+  </div>
+  <div class="comment-item">
+    <div class="comment-meta">
+      <span class="badge neg">negativo</span>
+      <span class="comment-user">@alexgaroz</span>
+      <span class="comment-likes">0 likes</span>
+    </div>
+    <div class="comment-text">"Que vacío, el del año pasado fue mejor."</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">Insights estratégicos</div>
+  <div class="insight-row"><div class="insight-dot"></div><div class="insight-text">La mecánica de reciclaje generó conversación orgánica genuina — no solo reacciones vacías. Eso es ganado real.</div></div>
+  <div class="insight-row"><div class="insight-dot"></div><div class="insight-text">El comentario de @pepsiguate celebrando el desbloqueo fue el más likeado (182): la marca se sumó a la conversación de forma natural, no corporativa.</div></div>
+  <div class="insight-row"><div class="insight-dot"></div><div class="insight-text">La crítica negativa es una sola y sin likes — bajo impacto, probablemente un asistente del año anterior.</div></div>
+  <div class="insight-row"><div class="insight-dot"></div><div class="insight-text">La muestra es pequeña (31 comentarios) — las métricas son indicativas. El volumen de likes en comentarios positivos da más peso que el conteo puro.</div></div>
+</div>
+
+<script>
+new Chart(document.getElementById('pieChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Positivo', 'Neutro', 'Negativo'],
+    datasets: [{
+      data: [68, 19, 13],
+      backgroundColor: ['#1D9E75', '#888780', '#E24B4A'],
+      borderWidth: 0,
+      hoverOffset: 4
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: { label: (ctx) => ' ' + ctx.label + ': ' + ctx.parsed + '%' }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
